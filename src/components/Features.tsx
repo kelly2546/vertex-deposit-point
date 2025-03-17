@@ -1,22 +1,28 @@
+
 import { Card } from "@/components/ui/card";
-import { Wallet, Shield, CreditCard } from "lucide-react";
+import { LineChart, Shield, BarChart3, Globe } from "lucide-react";
 
 const Features = () => {
   const features = [
     {
-      icon: <Wallet className="w-6 h-6 text-white" />,
-      title: "Mobile Banking",
-      description: "Manage your finances on the go with our secure mobile banking platform"
+      icon: <LineChart className="w-6 h-6 text-white" />,
+      title: "Advanced Trading Tools",
+      description: "Access powerful charts, indicators, and automated trading systems"
     },
     {
       icon: <Shield className="w-6 h-6 text-white" />,
-      title: "Secure Transactions",
-      description: "Bank-grade security for all your transactions and personal data"
+      title: "Secure Trading",
+      description: "Enterprise-grade security for your assets and personal information"
     },
     {
-      icon: <CreditCard className="w-6 h-6 text-white" />,
-      title: "Digital Cards",
-      description: "Virtual and physical cards with advanced control features"
+      icon: <BarChart3 className="w-6 h-6 text-white" />,
+      title: "Real-time Analytics",
+      description: "Make informed decisions with real-time market data and insights"
+    },
+    {
+      icon: <Globe className="w-6 h-6 text-white" />,
+      title: "Global Markets",
+      description: "Trade across multiple global markets from a single platform"
     }
   ];
 
@@ -27,17 +33,17 @@ const Features = () => {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6">
             <h2 className="text-4xl font-bold text-white">
-              All the experience in the new application
+              Everything you need to trade with confidence
             </h2>
             <p className="text-xl text-white/60">
-              Simple transfers, payments for utilities, functional statements, card settings, for which you used to have to go to the branch online-banking
+              Our comprehensive trading platform provides all the tools, resources, and support you need to succeed in today's dynamic markets
             </p>
           </div>
-          <div className="grid gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {features.map((feature, index) => (
               <Card 
                 key={index} 
-                className="p-6 hover-lift glass-effect flex items-start gap-4 group transition-all duration-300"
+                className="p-6 hover-lift glass-effect flex flex-col items-start gap-4 group transition-all duration-300"
               >
                 <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
                   {feature.icon}
