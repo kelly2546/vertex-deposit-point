@@ -51,15 +51,15 @@ const paymentMethods = [
 // Currency conversion rate
 const USD_TO_KSH_RATE = 135;
 
+// Maximum deposit amount for new users
+const MAX_DEPOSIT_AMOUNT = 17;
+
 // Form schema
 const formSchema = z.object({
   amount: z.string()
     .min(1, { message: "Amount is required" })
     .refine((val) => !isNaN(Number(val)) && Number(val) > 0, { 
       message: "Amount must be a positive number" 
-    })
-    .refine((val) => Number(val) === 17, {
-      message: "First deposit is limited to $17"
     }),
   paymentMethod: z.string({ required_error: "Please select a payment method" }),
   phone: z.string()
@@ -85,13 +85,13 @@ type FormValues = z.infer<typeof formSchema>;
 const Deposit = () => {
   const [selectedMethod, setSelectedMethod] = useState("");
   const [kshAmount, setKshAmount] = useState("0.00");
-  const [showLimitModal, setShowLimitModal] = useState(true);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const { toast } = useToast();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amount: "17", // Set default amount to $17
+      amount: "",
       paymentMethod: "",
       phone: "",
       cardNumber: "",
@@ -107,12 +107,26 @@ const Deposit = () => {
     if (amount && !isNaN(Number(amount))) {
       const convertedAmount = (Number(amount) * USD_TO_KSH_RATE).toFixed(2);
       setKshAmount(convertedAmount);
+      
+      // Show limit modal if user tries to enter more than the maximum amount
+      if (Number(amount) > MAX_DEPOSIT_AMOUNT) {
+        setShowLimitModal(true);
+        // Reset the amount to the maximum allowed
+        form.setValue("amount", MAX_DEPOSIT_AMOUNT.toString());
+      }
     } else {
       setKshAmount("0.00");
     }
   }, [form.watch("amount")]);
 
   function onSubmit(data: FormValues) {
+    // Check if amount is within limit before submission
+    if (Number(data.amount) > MAX_DEPOSIT_AMOUNT) {
+      setShowLimitModal(true);
+      form.setValue("amount", MAX_DEPOSIT_AMOUNT.toString());
+      return;
+    }
+    
     console.log(data);
     toast({
       title: "Deposit initiated",
@@ -138,7 +152,7 @@ const Deposit = () => {
               First Deposit Limit
             </DialogTitle>
             <DialogDescription className="text-white/70">
-              As a new user, your first deposit is limited to $17. After your first successful deposit, you can deposit any amount!
+              As a new user, your first deposit is limited to ${MAX_DEPOSIT_AMOUNT}. After your first successful deposit, you can deposit any amount!
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -197,7 +211,8 @@ const Deposit = () => {
                                 placeholder="0.00"
                                 className="pl-8 bg-background/40 border-white/10 text-white" 
                                 {...field}
-                                disabled // Disable amount input as it's fixed to $17
+                                type="number"
+                                step="0.01"
                               />
                               {field.value && !isNaN(Number(field.value)) && (
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 rounded bg-[#F2FF44]/10 text-[#F2FF44] text-sm">
