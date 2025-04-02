@@ -1,86 +1,27 @@
 
 import { useState, useEffect } from "react";
-import Navbar from "@/components/Navbar";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Card, 
   CardContent, 
   CardDescription, 
-  CardFooter, 
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
-import { ArrowRight, CreditCard, DollarSign, Info } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-// Payment method logos
-const paymentMethods = [
-  {
-    id: "mpesa",
-    name: "M-Pesa",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/1/15/M-PESA_LOGO-01.svg",
-  },
-  {
-    id: "airtel",
-    name: "Airtel Money",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/1/18/Airtel_logo.svg",
-  },
-  {
-    id: "card",
-    name: "Visa/Mastercard",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg",
-  }
-];
+import Navbar from "@/components/Navbar";
+import DepositLimitModal from "@/components/deposit/DepositLimitModal";
+import PaymentForm from "@/components/deposit/PaymentForm";
+import DepositSummary from "@/components/deposit/DepositSummary";
+import { formSchema, FormValues } from "@/components/deposit/PaymentMethodSelection";
 
 // Currency conversion rate
 const USD_TO_KSH_RATE = 135;
 
 // Maximum deposit amount for new users
 const MAX_DEPOSIT_AMOUNT = 17;
-
-// Form schema
-const formSchema = z.object({
-  amount: z.string()
-    .min(1, { message: "Amount is required" })
-    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, { 
-      message: "Amount must be a positive number" 
-    }),
-  paymentMethod: z.string({ required_error: "Please select a payment method" }),
-  phone: z.string()
-    .min(10, { message: "Phone number must be at least 10 digits" })
-    .optional()
-    .or(z.literal("")),
-  cardNumber: z.string()
-    .min(16, { message: "Card number must be at least 16 digits" })
-    .optional()
-    .or(z.literal("")),
-  cardExpiry: z.string()
-    .optional()
-    .or(z.literal("")),
-  cardCvv: z.string()
-    .min(3, { message: "CVV must be at least 3 digits" })
-    .optional()
-    .or(z.literal("")),
-  savePaymentMethod: z.boolean().default(false).optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
 
 const Deposit = () => {
   const [selectedMethod, setSelectedMethod] = useState("");
@@ -143,28 +84,11 @@ const Deposit = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* First Deposit Limit Modal */}
-      <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>
-        <DialogContent className="bg-[#111319] text-white border border-white/10">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Info className="h-5 w-5 text-[#F2FF44]" />
-              First Deposit Limit
-            </DialogTitle>
-            <DialogDescription className="text-white/70">
-              As a new user, your first deposit is limited to ${MAX_DEPOSIT_AMOUNT}. After your first successful deposit, you can deposit any amount!
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button 
-              onClick={() => setShowLimitModal(false)}
-              className="w-full bg-[#F2FF44] text-black hover:bg-[#E2EF34]"
-            >
-              I Understand
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DepositLimitModal 
+        open={showLimitModal} 
+        onOpenChange={setShowLimitModal} 
+        maxDepositAmount={MAX_DEPOSIT_AMOUNT} 
+      />
       
       <div className="max-w-7xl mx-auto px-4 pt-32 pb-20">
         <motion.div 
@@ -196,200 +120,13 @@ const Deposit = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    <FormField
-                      control={form.control}
-                      name="amount"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white">Amount</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60">$</span>
-                              <Input 
-                                placeholder="0.00"
-                                className="pl-8 bg-background/40 border-white/10 text-white" 
-                                {...field}
-                                type="number"
-                                step="0.01"
-                              />
-                              {field.value && !isNaN(Number(field.value)) && (
-                                <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 rounded bg-[#F2FF44]/10 text-[#F2FF44] text-sm">
-                                  KSH {kshAmount}
-                                </div>
-                              )}
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="space-y-3">
-                      <Label className="text-white">Select Payment Method</Label>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {paymentMethods.map((method) => (
-                          <div 
-                            key={method.id}
-                            onClick={() => handleMethodSelection(method.id)}
-                            className={`border rounded-lg p-4 cursor-pointer transition-all flex flex-col items-center justify-center h-32 ${
-                              selectedMethod === method.id 
-                                ? "border-[#F2FF44] bg-white/5" 
-                                : "border-white/10 hover:border-white/30"
-                            }`}
-                          >
-                            <div className="w-20 h-16 flex items-center justify-center">
-                              <img 
-                                src={method.logo} 
-                                alt={method.name} 
-                                className="max-w-full max-h-full object-contain"
-                              />
-                            </div>
-                            <p className="mt-3 text-sm text-center text-white">
-                              {method.name}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                      {form.formState.errors.paymentMethod && (
-                        <p className="text-red-500 text-sm">
-                          {form.formState.errors.paymentMethod.message}
-                        </p>
-                      )}
-                    </div>
-
-                    {selectedMethod === "mpesa" && (
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-white">M-Pesa Phone Number</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Enter your M-Pesa registered number"
-                                className="bg-background/40 border-white/10 text-white" 
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                    
-                    {selectedMethod === "airtel" && (
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-white">Airtel Money Number</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Enter your Airtel Money number"
-                                className="bg-background/40 border-white/10 text-white" 
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-                    
-                    {selectedMethod === "card" && (
-                      <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="cardNumber"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-white">Card Number</FormLabel>
-                              <FormControl>
-                                <div className="relative">
-                                  <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60 h-4 w-4" />
-                                  <Input 
-                                    placeholder="•••• •••• •••• ••••"
-                                    className="pl-10 bg-background/40 border-white/10 text-white" 
-                                    {...field}
-                                  />
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="cardExpiry"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-white">Expiry Date</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="MM/YY"
-                                    className="bg-background/40 border-white/10 text-white" 
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="cardCvv"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-white">CVV</FormLabel>
-                                <FormControl>
-                                  <Input 
-                                    placeholder="•••"
-                                    className="bg-background/40 border-white/10 text-white" 
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <FormField
-                          control={form.control}
-                          name="savePaymentMethod"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                  className="data-[state=checked]:bg-[#F2FF44] data-[state=checked]:text-black"
-                                />
-                              </FormControl>
-                              <div className="space-y-1 leading-none">
-                                <FormLabel className="text-white">
-                                  Save card for future payments
-                                </FormLabel>
-                              </div>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    )}
-                    
-                    <Button 
-                      type="submit"
-                      disabled={!form.formState.isValid || !selectedMethod}
-                      className="w-full bg-[#F2FF44] text-black hover:bg-[#E2EF34] flex items-center justify-center gap-2 py-6"
-                    >
-                      <span>Proceed to Payment</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </form>
-                </Form>
+                <PaymentForm 
+                  form={form}
+                  kshAmount={kshAmount}
+                  selectedMethod={selectedMethod}
+                  onMethodSelect={handleMethodSelection}
+                  onSubmit={onSubmit}
+                />
               </CardContent>
             </Card>
           </motion.div>
@@ -399,51 +136,7 @@ const Deposit = () => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
           >
-            <div className="space-y-6">
-              <Card className="border border-white/10 bg-[#111319] text-white shadow-lg">
-                <CardHeader>
-                  <CardTitle>Deposit Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/70">Amount (USD)</span>
-                    <span className="font-semibold">
-                      ${form.watch("amount") || "0.00"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/70">Amount (KSH)</span>
-                    <span className="font-semibold">KSH {kshAmount}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/70">Processing Fee</span>
-                    <span className="font-semibold">$0.00</span>
-                  </div>
-                  <div className="border-t border-white/10 pt-4 flex justify-between items-center">
-                    <span className="font-medium">Total</span>
-                    <div className="flex flex-col items-end">
-                      <span className="text-xl font-bold text-[#F2FF44]">
-                        ${form.watch("amount") || "0.00"}
-                      </span>
-                      <span className="text-sm text-white/60">
-                        KSH {kshAmount}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="border border-white/10 bg-[#111319] text-white shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-base">Secure Payments</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-white/70">
-                    All transactions are encrypted and secure. Your financial information is never stored on our servers.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            <DepositSummary watch={form.watch} kshAmount={kshAmount} />
           </motion.div>
         </div>
       </div>
