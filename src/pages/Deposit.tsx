@@ -18,8 +18,16 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { ArrowRight, CreditCard, DollarSign } from "lucide-react";
+import { ArrowRight, CreditCard, DollarSign, Info } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 // Payment method logos
 const paymentMethods = [
@@ -49,6 +57,9 @@ const formSchema = z.object({
     .min(1, { message: "Amount is required" })
     .refine((val) => !isNaN(Number(val)) && Number(val) > 0, { 
       message: "Amount must be a positive number" 
+    })
+    .refine((val) => Number(val) === 17, {
+      message: "First deposit is limited to $17"
     }),
   paymentMethod: z.string({ required_error: "Please select a payment method" }),
   phone: z.string()
@@ -74,12 +85,13 @@ type FormValues = z.infer<typeof formSchema>;
 const Deposit = () => {
   const [selectedMethod, setSelectedMethod] = useState("");
   const [kshAmount, setKshAmount] = useState("0.00");
+  const [showLimitModal, setShowLimitModal] = useState(true);
   const { toast } = useToast();
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amount: "",
+      amount: "17", // Set default amount to $17
       paymentMethod: "",
       phone: "",
       cardNumber: "",
@@ -116,6 +128,29 @@ const Deposit = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      
+      {/* First Deposit Limit Modal */}
+      <Dialog open={showLimitModal} onOpenChange={setShowLimitModal}>
+        <DialogContent className="bg-[#111319] text-white border border-white/10">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-[#F2FF44]" />
+              First Deposit Limit
+            </DialogTitle>
+            <DialogDescription className="text-white/70">
+              As a new user, your first deposit is limited to $17. After your first successful deposit, you can deposit any amount!
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              onClick={() => setShowLimitModal(false)}
+              className="w-full bg-[#F2FF44] text-black hover:bg-[#E2EF34]"
+            >
+              I Understand
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <div className="max-w-7xl mx-auto px-4 pt-32 pb-20">
         <motion.div 
@@ -162,6 +197,7 @@ const Deposit = () => {
                                 placeholder="0.00"
                                 className="pl-8 bg-background/40 border-white/10 text-white" 
                                 {...field}
+                                disabled // Disable amount input as it's fixed to $17
                               />
                               {field.value && !isNaN(Number(field.value)) && (
                                 <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 rounded bg-[#F2FF44]/10 text-[#F2FF44] text-sm">
@@ -390,20 +426,6 @@ const Deposit = () => {
                   <p className="text-sm text-white/70">
                     All transactions are encrypted and secure. Your financial information is never stored on our servers.
                   </p>
-                </CardContent>
-              </Card>
-              
-              <Card className="border border-white/10 bg-[#111319] text-white shadow-lg">
-                <CardHeader>
-                  <CardTitle className="text-base">Need Help?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-white/70 mb-4">
-                    If you're having trouble with your deposit, our customer support team is here to help.
-                  </p>
-                  <Button variant="outline" className="w-full text-white border-white/20 hover:bg-white/10">
-                    Contact Support
-                  </Button>
                 </CardContent>
               </Card>
             </div>
