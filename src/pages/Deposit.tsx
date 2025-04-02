@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import { 
   Card, 
@@ -18,7 +18,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
-import { ArrowRight, CreditCard } from "lucide-react";
+import { ArrowRight, CreditCard, DollarSign } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // Payment method logos
@@ -39,6 +39,9 @@ const paymentMethods = [
     logo: "https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg",
   }
 ];
+
+// Currency conversion rate
+const USD_TO_KSH_RATE = 135;
 
 // Form schema
 const formSchema = z.object({
@@ -70,6 +73,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 const Deposit = () => {
   const [selectedMethod, setSelectedMethod] = useState("");
+  const [kshAmount, setKshAmount] = useState("0.00");
   const { toast } = useToast();
   
   const form = useForm<FormValues>({
@@ -85,11 +89,22 @@ const Deposit = () => {
     },
   });
 
+  // Update KSH amount whenever the USD amount changes
+  useEffect(() => {
+    const amount = form.watch("amount");
+    if (amount && !isNaN(Number(amount))) {
+      const convertedAmount = (Number(amount) * USD_TO_KSH_RATE).toFixed(2);
+      setKshAmount(convertedAmount);
+    } else {
+      setKshAmount("0.00");
+    }
+  }, [form.watch("amount")]);
+
   function onSubmit(data: FormValues) {
     console.log(data);
     toast({
       title: "Deposit initiated",
-      description: `Processing deposit of ${data.amount} using ${data.paymentMethod}`,
+      description: `Processing deposit of $${data.amount} (KSH ${kshAmount}) using ${data.paymentMethod}`,
     });
   }
 
@@ -148,6 +163,11 @@ const Deposit = () => {
                                 className="pl-8 bg-background/40 border-white/10 text-white" 
                                 {...field}
                               />
+                              {field.value && !isNaN(Number(field.value)) && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-1 rounded bg-[#F2FF44]/10 text-[#F2FF44] text-sm">
+                                  KSH {kshAmount}
+                                </div>
+                              )}
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -335,10 +355,14 @@ const Deposit = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-white/70">Amount</span>
+                    <span className="text-white/70">Amount (USD)</span>
                     <span className="font-semibold">
                       ${form.watch("amount") || "0.00"}
                     </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-white/70">Amount (KSH)</span>
+                    <span className="font-semibold">KSH {kshAmount}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-white/70">Processing Fee</span>
@@ -346,9 +370,14 @@ const Deposit = () => {
                   </div>
                   <div className="border-t border-white/10 pt-4 flex justify-between items-center">
                     <span className="font-medium">Total</span>
-                    <span className="text-xl font-bold text-[#F2FF44]">
-                      ${form.watch("amount") || "0.00"}
-                    </span>
+                    <div className="flex flex-col items-end">
+                      <span className="text-xl font-bold text-[#F2FF44]">
+                        ${form.watch("amount") || "0.00"}
+                      </span>
+                      <span className="text-sm text-white/60">
+                        KSH {kshAmount}
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
