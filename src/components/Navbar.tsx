@@ -30,13 +30,6 @@ const Navbar = () => {
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#F2FF44] group-hover:w-full transition-all duration-300"></span>
               </a>
             ))}
-            <a 
-              href="/dashboard" 
-              className="text-white/80 hover:text-white transition-colors relative group py-2"
-            >
-              Dashboard
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#F2FF44] group-hover:w-full transition-all duration-300"></span>
-            </a>
           </div>
           <div className="flex items-center space-x-4 pl-4 border-l border-white/10">
             <Button variant="outline" className="text-white border-white/20 hover:bg-white/10 rounded-lg">
@@ -70,7 +63,6 @@ const Navbar = () => {
           <a href="#" className="text-white/80 hover:text-white transition-colors py-2">Trading</a>
           <a href="#" className="text-white/80 hover:text-white transition-colors py-2">About Us</a>
           <a href="#" className="text-white/80 hover:text-white transition-colors py-2">Pricing</a>
-          <a href="/dashboard" className="text-white/80 hover:text-white transition-colors py-2">Dashboard</a>
           <div className="flex flex-col space-y-3 pt-3 border-t border-white/10">
             <Button variant="outline" className="text-white border-white/20 hover:bg-white/10 w-full justify-center">
               Open trading account
